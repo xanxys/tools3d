@@ -132,6 +132,13 @@ class SE3(object):
         """ Return rotation component. (unlike translation, rotation is always well-defined) """
         return SE3(np.zeros(3), self.q)
 
+    def to_matrix(self):
+        """ Return 4x4 matrix that works on homegeneous coordinate. """
+        m = np.identity(4)
+        m[:3,:3] = self.q.to_rot()
+        m[:3,3] = self.d
+        return m
+    
     def inverse(self):
         qc = self.q.conjugate()
         return SE3(-qc.to_rot().dot(self.d), qc)
@@ -159,6 +166,7 @@ class SE3(object):
         return 'SE3(distance=%f, angle=%f)'%(
             math.sqrt((self.d**2).sum()),
             math.degrees(math.acos(self.q.s)*2))
+
 
 
 class Quaternion(object):
