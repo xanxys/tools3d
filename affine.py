@@ -168,6 +168,60 @@ class SE3(object):
             math.degrees(math.acos(self.q.s)*2))
 
 
+class SO3(object):
+    """
+    Lie Group SO(3): rotation in 3d space
+
+    T(x)=R(self.q)x
+    """
+    
+    def __init__(self, q):
+        """ You shouldn't call this directly. """
+        self.q = q/abs(q)
+
+    @staticmethod
+    def identity():
+        return SO3(Quaternion(1, np.zeros(3)))
+
+    @staticmethod
+    def rotate(axis, angle):
+        return SO3(Quaternion(math.cos(angle*0.5), axis*math.sin(angle*0.5)))
+
+    def to_matrix(self):
+        """ Return 4x4 matrix that works on homegeneous coordinate. """
+        m = np.identity(4)
+        m[:3,:3] = self.q.to_rot()
+        m[:3,3] = self.d
+        return m
+    
+    def inverse(self):
+        return SO3(self.q.conjugate())
+
+    @property
+    def I(self):
+        return self.inverse()
+
+    def apply(self, x):
+        rot = self.q.to_rot()
+
+        if type(x) is SO3:
+            return SO3(self.q*x.q)
+        elif type(x) is SE3:
+            return SE3(np.zeros(3), self.q) * x
+        elif x.shape == (3,):
+            return np.dot(rot, x)
+        elif x.ndim == 2 and x.shape[1] == 3:
+            return dot_m_vs(rot, x)
+        else:
+            raise NotImplemented('unknown operand')
+
+    def __mul__(self, other):
+        return self.apply(other)
+    
+    def __repr__(self):
+        return 'SO3(angle=%f)'%(math.degrees(math.acos(self.q.s)*2))
+
+
 
 class Quaternion(object):
     def __init__(self, s, v):
